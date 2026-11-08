@@ -31,7 +31,7 @@ function removeBrandLogo(){if(!isAdmin())return;if(!confirm('Restaurar a identid
 function saveBrandLogo(input){if(!isAdmin()){toast('Somente o Administrador pode alterar a logo.');input.value='';return}let f=input.files?.[0];if(!f)return;if(!f.type.startsWith('image/')){toast('Selecione uma imagem.');return}let reader=new FileReader();reader.onload=()=>{let img=new Image();img.onload=()=>{let scale=Math.min(1,900/Math.max(img.width,img.height)),canvas=document.createElement('canvas');canvas.width=Math.round(img.width*scale);canvas.height=Math.round(img.height*scale);canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);db.brandLogo=canvas.toDataURL('image/jpeg',0.84);save();applyBrandLogo();closeModal();toast('Imagem do logotipo atualizada.');input.value=''};img.src=reader.result};reader.readAsDataURL(f)}
 document.addEventListener('pointerdown',e=>{let el=e.target.closest('.brandmark');if(!el)return;logoLongPress=false;logoPressTimer=setTimeout(()=>{logoLongPress=true;openLogoViewer()},650)});['pointerup','pointercancel','pointerleave'].forEach(ev=>document.addEventListener(ev,()=>{if(logoPressTimer){clearTimeout(logoPressTimer);logoPressTimer=null}}));
 
-const API_URL='https://clouds-mass-paying-kinds.trycloudflare.com';
+const API_URL = 'http://127.0.0.1:5296';
 let apiToken = null;
 let pendingPassword = '';
 
@@ -168,7 +168,7 @@ async function login(){
             body:JSON.stringify({Matricula:uid,Senha:pw})
         });
 
-        apiToken=resposta.token;
+        apiToken=resposta.token;localStorage.setItem(T3_SESSION_KEY,apiToken);
         pendingPassword=pw;
 
         const u=resposta.usuario;
@@ -225,7 +225,29 @@ async function saveFirstPassword(){
     }
 }
 function cancelFirstLogin(){me=null;closeModal();document.getElementById('loginPass').value=''}
-function logout(){me=null;document.getElementById('appScreen').classList.add('hidden');document.getElementById('loginScreen').classList.remove('hidden');document.getElementById('loginPass').value=''}
+async function logout(){try{if(apiToken)await apiFetch("/logout",{method:"POST"});}catch(e){}localStorage.removeItem(T3_SESSION_KEY);apiToken=null;me=null;document.getElementById('appScreen').classList.add('hidden');document.getElementById('loginScreen').classList.remove('hidden');document.getElementById('loginPass').value=''}
+/* T3_SESSION_RESTORE */
+const T3_SESSION_KEY='t3estoque_token';
+async function restaurarSessaoT3(){
+ const salvo=localStorage.getItem(T3_SESSION_KEY);
+ if(!salvo)return;
+ apiToken=salvo;
+ try{
+  const atual=await apiFetch('/me');
+  const u=atual.usuario||atual;
+  me={id:String(u.id),apiId:Number(u.id),matricula:u.matricula,name:u.nome,role:String(u.perfil).toUpperCase()==='ADM'?'admin':'employee',active:true,mustChangePassword:!!u.exigirTrocaSenha,estoqueId:u.estoqueId};
+  if(me.mustChangePassword){forceFirstPasswordChange();return;}
+  await loadApiData();
+  page='dashboard';
+  enterApp();
+ }catch(e){
+  apiToken=null;
+  me=null;
+  localStorage.removeItem(T3_SESSION_KEY);
+  document.getElementById('appScreen').classList.add('hidden');
+  document.getElementById('loginScreen').classList.remove('hidden');
+ }
+}
 function navItems(){return isAdmin()?[['dashboard','▦','Visão geral'],['stocks','▤','Central de estoques'],['withdraw','⇄','Retirar material'],['requisitions','📝','Requisições'+(db.requisitions.filter(r=>r.status==='Pendente').length?' · '+db.requisitions.filter(r=>r.status==='Pendente').length:'')],['items','▣','Materiais'],['users','♙','Colaboradores'],['bagmonitor','🛍','Acompanhamento de sacolas'],['history','☷','Histórico'],['reports','▥','Relatórios'],['account','⚙','Conta']]:[['dashboard','▦','Meu painel'],['withdraw','⇄','Retirar material'],['requisitions','📝','Requisições'],['bag','🛍','Sacola'],['task','📷','Executar tarefa'],['myhistory','☷','Minhas retiradas'],['account','⚙','Conta']]}
 function render(){applyBrandLogo();let labels={dashboard:isAdmin()?'Visão geral':'Meu painel',stocks:'Central de estoques',withdraw:'Retirar material',requisitions:'Requisições',items:'Materiais',users:'Colaboradores',history:'Histórico',bagmonitor:'Acompanhamento de sacolas',myhistory:'Minhas retiradas',bag:'Minha sacola',task:'Executar tarefa',reports:'Relatórios',account:'Minha conta'};document.getElementById('crumb').innerHTML=(labels[page]||'T3 Estoque')+'<small>Gestão integrada - Trecho 3</small>';document.getElementById('nav').innerHTML=navItems().map(([p,ico,t])=>`<button class="${page===p?'active':''}" onclick="go('${p}')"><span class="ico">${ico}</span><span class="navtext">${t}</span></button>`).join('');let c=document.getElementById('content');let map={dashboard:dashboardPage,stocks:stocksPage,withdraw:withdrawPage,requisitions:requisitionsPage,items:itemsPage,users:usersPage,bagmonitor:bagMonitorPage,history:historyPage,myhistory:myHistoryPage,bag:bagPage,task:taskPage,reports:reportsPage,account:accountPage};(map[page]||dashboardPage)(c)}function go(p){page=p;render()}
 function dashboardPage(c){if(!isAdmin()){employeeDashboard(c);return}let total=db.items.length,low=lowItems().length,qty=db.items.reduce((s,i)=>s+Number(i.qty||0),0),withdrawals=db.moves.filter(m=>m.type==='Retirada').length;let unitCards=db.units.filter(u=>u.active).map(u=>{let its=unitItems(u.id),lo=lowItems(u.id).length;return `<div class="stockcard" onclick="activeUnit='${u.id}';go('stocks')"><div class="stockicon">${u.id==='SAU14'?'🗄️':'📦'}</div><h3>${esc(u.code)}</h3><p>${esc(u.name)}</p><div class="stockmeta"><span>${its.length} materiais</span><b>${lo?lo+' alertas':'Em acompanhamento'}</b></div></div>`}).join('');let ranking=withdrawRanking();c.innerHTML=`<div class="pagehead"><div><h1>Visão geral</h1><p class="muted">Acompanhamento consolidado dos estoques do Trecho 3.</p></div><div class="actions"><button onclick="go('stocks')">Abrir central de estoques</button><button class="secondary" onclick="go('items')">+ Cadastrar material</button></div></div><div class="stats"><div class="stat"><span>Requisições pendentes</span><strong>${db.requisitions.filter(r=>r.status==='Pendente').length}</strong><i class="symbol">📝</i></div><div class="stat"><span>Materiais cadastrados</span><strong>${total}</strong><i class="symbol">▣</i></div><div class="stat"><span>Unidades de estoque</span><strong>${db.units.filter(u=>u.active).length}</strong><i class="symbol">⌂</i></div><div class="stat"><span>Itens com estoque baixo</span><strong>${low}</strong><i class="symbol">⚠</i></div><div class="stat"><span>Retiradas registradas</span><strong>${withdrawals}</strong><i class="symbol">⇄</i></div></div><div class="panel" style="margin-bottom:16px"><div class="panelhead"><h3>Central de estoques</h3><span class="sectiontag">SALDOS INDEPENDENTES</span></div><div class="stockcards">${unitCards}</div></div><div class="grid2"><div class="panel"><h3>Materiais com estoque baixo</h3>${low?`<div class="tablewrap"><table><thead><tr><th>Unidade</th><th>Material</th><th>Local</th><th>Saldo</th><th>Mínimo</th></tr></thead><tbody>${lowItems().map(i=>`<tr><td>${i.unitId}</td><td class="low-text">${esc(i.name)}</td><td class="low-text">${esc(placeName(i))}</td><td><span class="pill off">${i.qty} ${esc(i.unit)}</span></td><td>${i.min}</td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">Nenhum item abaixo do mínimo.</p>'}</div><div class="panel"><h3>Materiais mais retirados</h3>${ranking.length?ranking.slice(0,5).map(x=>`<div class="barrow"><span>${esc(x.item.name)}</span><div class="progress"><span style="width:${x.percent}%"></span></div><b>${x.percent}%</b></div>`).join(''):'<p class="muted">As porcentagens aparecerão após registrar retiradas.</p>'}</div></div>`}
@@ -267,9 +289,11 @@ function deleteHistoryPerson(){let opts=db.users.filter(x=>x.role!=='admin').map
 function reportsPage(c){let low=lowItems();let total=db.moves.filter(m=>m.type==='Retirada').length;c.innerHTML=`<div class="pagehead"><div><h1>Relatórios</h1><p class="muted">Visão consolidada e necessidade de reposição.</p></div><button onclick="exportHistory()">Exportar movimentações</button></div><div class="stats"><div class="stat"><span>Itens em estoque baixo</span><strong>${low.length}</strong></div><div class="stat"><span>Retiradas registradas</span><strong>${total}</strong></div><div class="stat"><span>Unidades atendidas</span><strong>${db.units.length}</strong></div><div class="stat"><span>Colaboradores ativos</span><strong>${db.users.filter(x=>x.active&&x.role==='employee').length}</strong></div></div><div class="panel"><h3>Lista de reposição</h3>${low.length?`<div class="tablewrap"><table><thead><tr><th>Unidade</th><th>Material</th><th>Local</th><th>Saldo</th><th>Mínimo</th><th>Necessidade sugerida</th></tr></thead><tbody>${low.map(i=>`<tr><td>${i.unitId}</td><td class="low-text">${esc(i.name)}</td><td class="low-text">${esc(placeName(i))}</td><td class="low-text">${i.qty}</td><td>${i.min}</td><td>${Math.max(0,i.min*2-i.qty)} ${esc(i.unit)}</td></tr>`).join('')}</tbody></table></div>`:'<p class="muted">Nenhum item precisa de reposição.</p>'}</div>`}
 function accountPage(c){c.innerHTML=`<div class="pagehead"><div><h1>Minha conta</h1><p class="muted">Atualize seu nome e suas credenciais de acesso.</p></div></div><div class="panel" style="max-width:650px"><div class="fields"><div class="field"><label>Nome de exibição</label><input id="accountName" value="${esc(me.name)}"></div><div class="field"><label>Matrícula (não editável)</label><input disabled value="${esc(me.id)}"></div><div class="field"><label>Perfil</label><input disabled value="${isAdmin()?'Administrador':'Colaborador'}"></div><div class="field"><label>Nova senha</label><input id="accountPass" type="password" autocomplete="new-password" placeholder="Deixe em branco para manter"></div><div class="field"><label>Confirmar nova senha</label><input id="accountPass2" type="password" autocomplete="new-password" placeholder="Repita a nova senha"></div></div><div class="actions"><button onclick="saveAccount()">Salvar alterações</button></div><p class="muted" style="font-size:12px;margin-top:15px">As alterações ficam salvas neste navegador do protótipo.</p></div>`}function saveAccount(){let name=document.getElementById('accountName').value.trim(),p1=document.getElementById('accountPass').value,p2=document.getElementById('accountPass2').value;if(!name){toast('Informe seu nome.');return}if(p1&&(p1.length<5||p1!==p2)){toast(p1.length<5?'A senha deve ter pelo menos 5 caracteres.':'As senhas não coincidem.');return}me.name=name;if(p1){me.password=p1;me.mustChangePassword=false}save();document.getElementById('who').textContent=me.name;document.getElementById('avatar').textContent=me.name.slice(0,1).toUpperCase();toast('Conta atualizada com sucesso.');accountPage(document.getElementById('content'))}
 function modal(html){document.getElementById('modalRoot').innerHTML=`<div class="modalback" onclick="if(event.target===this)closeModal()"><div class="modal">${html}</div></div>`}function closeModal(){document.getElementById('modalRoot').innerHTML=''}
-['loginId','loginPass'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')login()}));renderLoginHint();function renderLoginHint(){};
+['loginId','loginPass'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')login()}));renderLoginHint();restaurarSessaoT3();function renderLoginHint(){};
 </script>
 </body></html>
+
+
 
 
 
