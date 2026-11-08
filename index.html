@@ -10,7 +10,7 @@
 </style>
 </head>
 <body>
-<div id="loginScreen" class="loginwrap"><div class="login"><div class="loginbrand"><div class="brandmark" onclick="brandClick(event)" title="Toque/clique para voltar ao início; pressione para visualizar a logo">T3</div><div><h1>T3 ESTOQUE</h1><div class="muted" style="font-size:10px;letter-spacing:.1em">GESTÃO INTEGRADA - TRECHO 3</div></div></div><h2 style="margin:0 0 5px">Acessar plataforma</h2><p>Entre com sua matrícula e senha para continuar.</p><div class="field"><label>Matrícula</label><input id="loginId" autocomplete="username" placeholder="Digite sua matrícula"></div><div class="field"><label>Senha</label><input id="loginPass" type="password" autocomplete="current-password" placeholder="Digite sua senha"></div><button style="width:100%;margin-top:8px" onclick="login()">Entrar</button><div class="loginhint"><b>Acessos ilustrativos deste protótipo</b><br>Administrador: ADM001 / 12345<br>Segundo ADM: ADM002 / 12345<br>Colaborador: TESTE001 / 12345<br><br>Ambiente demonstrativo local. Os dados ficam salvos somente neste navegador.</div></div></div>
+<div id="loginScreen" class="loginwrap"><div class="login"><div class="loginbrand"><div class="brandmark" onclick="brandClick(event)" title="Toque/clique para voltar ao início; pressione para visualizar a logo">T3</div><div><h1>T3 ESTOQUE</h1><div class="muted" style="font-size:10px;letter-spacing:.1em">GESTÃO INTEGRADA - TRECHO 3</div></div></div><h2 style="margin:0 0 5px">Acessar plataforma</h2><p>Entre com sua matrícula e senha para continuar.</p><div class="field"><label>Matrícula</label><input id="loginId" autocomplete="username" placeholder="Digite sua matrícula"></div><div class="field"><label>Senha</label><input id="loginPass" type="password" autocomplete="current-password" placeholder="Digite sua senha"></div><button style="width:100%;margin-top:8px" onclick="login()">Entrar</button></div></div>
 <div id="appScreen" class="app hidden"><aside class="sidebar"><div class="brand"><div class="brandmark" onclick="brandClick(event)" title="Toque/clique para voltar ao início; pressione para visualizar a logo">T3</div><div class="brandtext"><strong>T3 ESTOQUE</strong><small>GESTÃO INTEGRADA - TRECHO 3</small></div></div><div class="navlabel">GESTÃO</div><nav class="nav" id="nav"></nav><div class="sidefoot">T3 Estoque · Protótipo navegável<br>Gestão integrada - Trecho 3</div></aside><main class="main"><header class="topbar"><div class="crumb" id="crumb">Visão geral<small>Gestão integrada - Trecho 3</small></div><div class="userbox"><div class="avatar" id="avatar">A</div><div class="usertext"><b id="who">Administrador</b><span class="muted" id="roleLabel">Administrador</span></div><button class="secondary small" onclick="logout()">Sair</button></div></header><div class="content" id="content"></div></main></div>
 <input id="brandLogoFile" type="file" accept="image/*" class="hidden" onchange="saveBrandLogo(this)"><div id="modalRoot"></div><div id="toastRoot"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -31,7 +31,7 @@ function removeBrandLogo(){if(!isAdmin())return;if(!confirm('Restaurar a identid
 function saveBrandLogo(input){if(!isAdmin()){toast('Somente o Administrador pode alterar a logo.');input.value='';return}let f=input.files?.[0];if(!f)return;if(!f.type.startsWith('image/')){toast('Selecione uma imagem.');return}let reader=new FileReader();reader.onload=()=>{let img=new Image();img.onload=()=>{let scale=Math.min(1,900/Math.max(img.width,img.height)),canvas=document.createElement('canvas');canvas.width=Math.round(img.width*scale);canvas.height=Math.round(img.height*scale);canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);db.brandLogo=canvas.toDataURL('image/jpeg',0.84);save();applyBrandLogo();closeModal();toast('Imagem do logotipo atualizada.');input.value=''};img.src=reader.result};reader.readAsDataURL(f)}
 document.addEventListener('pointerdown',e=>{let el=e.target.closest('.brandmark');if(!el)return;logoLongPress=false;logoPressTimer=setTimeout(()=>{logoLongPress=true;openLogoViewer()},650)});['pointerup','pointercancel','pointerleave'].forEach(ev=>document.addEventListener(ev,()=>{if(logoPressTimer){clearTimeout(logoPressTimer);logoPressTimer=null}}));
 
-const API_URL = 'https://clouds-mass-paying-kinds.trycloudflare.com';
+const API_URL='https://clouds-mass-paying-kinds.trycloudflare.com';
 let apiToken = null;
 let pendingPassword = '';
 
@@ -270,4 +270,6 @@ function modal(html){document.getElementById('modalRoot').innerHTML=`<div class=
 ['loginId','loginPass'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')login()}));renderLoginHint();function renderLoginHint(){};
 </script>
 </body></html>
+
+
 
