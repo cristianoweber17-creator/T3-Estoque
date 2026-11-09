@@ -1,4 +1,4 @@
-<!doctype html>
+<<!doctype html>
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -11,7 +11,7 @@
 </head>
 <body>
 <div id="loginScreen" class="loginwrap"><div class="login"><div class="loginbrand"><div class="brandmark" onclick="brandClick(event)" title="Toque/clique para voltar ao início; pressione para visualizar a logo">T3</div><div><h1>T3 ESTOQUE</h1><div class="muted" style="font-size:10px;letter-spacing:.1em">GESTÃO INTEGRADA - TRECHO 3</div></div></div><h2 style="margin:0 0 5px">Acessar plataforma</h2><p>Entre com sua matrícula e senha para continuar.</p><div class="field"><label>Matrícula</label><input id="loginId" autocomplete="username" placeholder="Digite sua matrícula"></div><div class="field"><label>Senha</label><input id="loginPass" type="password" autocomplete="current-password" placeholder="Digite sua senha"></div><button style="width:100%;margin-top:8px" onclick="login()">Entrar</button></div></div>
-<div id="appScreen" class="app hidden"><aside class="sidebar"><div class="brand"><div class="brandmark" onclick="brandClick(event)" title="Toque/clique para voltar ao início; pressione para visualizar a logo">T3</div><div class="brandtext"><strong>T3 ESTOQUE</strong><small>GESTÃO INTEGRADA - TRECHO 3</small></div></div><div class="navlabel">GESTÃO</div><nav class="nav" id="nav"></nav><div class="sidefoot">T3 Estoque · Protótipo navegável<br>Gestão integrada - Trecho 3</div></aside><main class="main"><header class="topbar"><div class="crumb" id="crumb">Visão geral<small>Gestão integrada - Trecho 3</small></div><div class="userbox"><div class="avatar" id="avatar">A</div><div class="usertext"><b id="who">Administrador</b><span class="muted" id="roleLabel">Administrador</span></div><button class="secondary small" onclick="logout()">Sair</button></div></header><div class="content" id="content"></div></main></div>
+<div id="appScreen" class="app hidden"><aside class="sidebar"><div class="brand"><div class="brandmark" onclick="brandClick(event)" title="Toque/clique para voltar ao início; pressione para visualizar a logo">T3</div><div class="brandtext"><strong>T3 ESTOQUE</strong><small>GESTÃO INTEGRADA - TRECHO 3</small></div></div><div class="navlabel">GESTÃO</div><nav class="nav" id="nav"></nav><div class="sidefoot">T3 Estoque · <br>Gestão integrada - Trecho 3</div></aside><main class="main"><header class="topbar"><div class="crumb" id="crumb">Visão geral<small>Gestão integrada - Trecho 3</small></div><div class="userbox"><div class="avatar" id="avatar">A</div><div class="usertext"><b id="who">Administrador</b><span class="muted" id="roleLabel">Administrador</span></div><button class="secondary small" onclick="logout()">Sair</button></div></header><div class="content" id="content"></div></main></div>
 <input id="brandLogoFile" type="file" accept="image/*" class="hidden" onchange="saveBrandLogo(this)"><div id="modalRoot"></div><div id="toastRoot"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
@@ -890,6 +890,22 @@ function modal(html){document.getElementById('modalRoot').innerHTML=`<div class=
 ['loginId','loginPass'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')login()}));renderLoginHint();restaurarSessaoT3();function renderLoginHint(){};
 </script>
 </body></html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
