@@ -373,30 +373,51 @@ async function restaurarSessaoT3(){
   atual=await apiFetch('/me');
  }catch(e){
   const erro=String(e.message||e);
-
   if(erro.includes('HTTP 401')||erro.includes('HTTP 403')){
    apiToken=null;
    me=null;
    localStorage.removeItem(T3_SESSION_KEY);
    toast('Sessão expirada. Faça login novamente.');
   }else{
-   toast('Não foi possível validar a sessão. Ela foi preservada; atualize a página para tentar novamente.');
+   me=null;
+   toast('Não foi possível validar a sessão. Atualize a página para tentar novamente.');
   }
   return;
  }
 
  const u=atual.usuario||atual;
+ const id=apiValue(u,'Id');
+ const matricula=apiValue(u,'Matricula');
+ const nome=apiValue(u,'Nome');
+ const perfil=String(apiValue(u,'Perfil')||'').trim().toUpperCase();
+ const ativo=apiValue(u,'Ativo');
+
+ if(id==null||!matricula||!nome||!perfil||ativo===false){
+  apiToken=null;
+  me=null;
+  localStorage.removeItem(T3_SESSION_KEY);
+  toast('Dados da sessão inválidos. Faça login novamente.');
+  return;
+ }
 
  me={
-  id:String(u.id),
-  apiId:Number(u.id),
-  matricula:u.matricula,
-  name:u.nome,
-  role:String(u.perfil).toUpperCase()==='ADM'?'admin':'employee',
+  id:String(id),
+  apiId:Number(id),
+  matricula:matricula,
+  name:nome,
+  role:perfil==='ADM'?'admin':'employee',
   active:true,
-  mustChangePassword:!!u.exigirTrocaSenha,
-  estoqueId:u.estoqueId
+  mustChangePassword:!!apiValue(u,'ExigirTrocaSenha'),
+  estoqueId:apiValue(u,'EstoqueId')
  };
+
+ if(!Number.isFinite(me.apiId)){
+  apiToken=null;
+  me=null;
+  localStorage.removeItem(T3_SESSION_KEY);
+  toast('Identificação inválida. Faça login novamente.');
+  return;
+ }
 
  if(me.mustChangePassword){
   forceFirstPasswordChange();
@@ -408,7 +429,8 @@ async function restaurarSessaoT3(){
   page='dashboard';
   enterApp();
  }catch(e){
-  toast('Sessão preservada, mas houve falha ao carregar os dados. Atualize a página para tentar novamente.');
+  me=null;
+  toast('Falha ao carregar os dados. A sessão não foi aberta. Atualize a página para tentar novamente.');
  }
 }
 function navItems(){return isAdmin()?[['dashboard','▦','Visão geral'],['stocks','▤','Central de estoques'],['withdraw','⇄','Retirar material'],['requisitions','📝','Requisições'+(db.requisitions.filter(r=>r.status==='Pendente').length?' · '+db.requisitions.filter(r=>r.status==='Pendente').length:'')],['items','▣','Materiais'],['users','♙','Colaboradores'],['bagmonitor','🛍','Acompanhamento de sacolas'],['history','☷','Histórico'],['occurrences','⚠','Ocorrências'],['reports','▥','Relatórios'],['account','⚙','Conta']]:[['dashboard','▦','Meu painel'],['withdraw','⇄','Retirar material'],['requisitions','📝','Requisições'],['bag','🛍','Sacola'],['task','📷','Executar tarefa'],['occurrences','⚠','Ocorrências'],['myhistory','☷','Minhas retiradas'],['account','⚙','Conta']]}
@@ -868,6 +890,24 @@ function modal(html){document.getElementById('modalRoot').innerHTML=`<div class=
 ['loginId','loginPass'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')login()}));renderLoginHint();restaurarSessaoT3();function renderLoginHint(){};
 </script>
 </body></html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
