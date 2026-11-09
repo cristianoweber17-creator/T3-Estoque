@@ -365,21 +365,50 @@ const T3_SESSION_KEY='t3estoque_token';
 async function restaurarSessaoT3(){
  const salvo=localStorage.getItem(T3_SESSION_KEY);
  if(!salvo)return;
+
  apiToken=salvo;
+ let atual;
+
  try{
-  const atual=await apiFetch('/me');
-  const u=atual.usuario||atual;
-  me={id:String(u.id),apiId:Number(u.id),matricula:u.matricula,name:u.nome,role:String(u.perfil).toUpperCase()==='ADM'?'admin':'employee',active:true,mustChangePassword:!!u.exigirTrocaSenha,estoqueId:u.estoqueId};
-  if(me.mustChangePassword){forceFirstPasswordChange();return;}
+  atual=await apiFetch('/me');
+ }catch(e){
+  const erro=String(e.message||e);
+
+  if(erro.includes('HTTP 401')||erro.includes('HTTP 403')){
+   apiToken=null;
+   me=null;
+   localStorage.removeItem(T3_SESSION_KEY);
+   toast('Sessão expirada. Faça login novamente.');
+  }else{
+   toast('Não foi possível validar a sessão. Ela foi preservada; atualize a página para tentar novamente.');
+  }
+  return;
+ }
+
+ const u=atual.usuario||atual;
+
+ me={
+  id:String(u.id),
+  apiId:Number(u.id),
+  matricula:u.matricula,
+  name:u.nome,
+  role:String(u.perfil).toUpperCase()==='ADM'?'admin':'employee',
+  active:true,
+  mustChangePassword:!!u.exigirTrocaSenha,
+  estoqueId:u.estoqueId
+ };
+
+ if(me.mustChangePassword){
+  forceFirstPasswordChange();
+  return;
+ }
+
+ try{
   await loadApiData();
   page='dashboard';
   enterApp();
  }catch(e){
-  apiToken=null;
-  me=null;
-  localStorage.removeItem(T3_SESSION_KEY);
-  document.getElementById('appScreen').classList.add('hidden');
-  document.getElementById('loginScreen').classList.remove('hidden');
+  toast('Sessão preservada, mas houve falha ao carregar os dados. Atualize a página para tentar novamente.');
  }
 }
 function navItems(){return isAdmin()?[['dashboard','▦','Visão geral'],['stocks','▤','Central de estoques'],['withdraw','⇄','Retirar material'],['requisitions','📝','Requisições'+(db.requisitions.filter(r=>r.status==='Pendente').length?' · '+db.requisitions.filter(r=>r.status==='Pendente').length:'')],['items','▣','Materiais'],['users','♙','Colaboradores'],['bagmonitor','🛍','Acompanhamento de sacolas'],['history','☷','Histórico'],['occurrences','⚠','Ocorrências'],['reports','▥','Relatórios'],['account','⚙','Conta']]:[['dashboard','▦','Meu painel'],['withdraw','⇄','Retirar material'],['requisitions','📝','Requisições'],['bag','🛍','Sacola'],['task','📷','Executar tarefa'],['occurrences','⚠','Ocorrências'],['myhistory','☷','Minhas retiradas'],['account','⚙','Conta']]}
@@ -839,13 +868,6 @@ function modal(html){document.getElementById('modalRoot').innerHTML=`<div class=
 ['loginId','loginPass'].forEach(id=>document.getElementById(id).addEventListener('keydown',e=>{if(e.key==='Enter')login()}));renderLoginHint();restaurarSessaoT3();function renderLoginHint(){};
 </script>
 </body></html>
-
-
-
-
-
-
-
 
 
 
